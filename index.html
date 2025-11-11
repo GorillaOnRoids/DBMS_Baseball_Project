@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pitching Portal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Pitching Data Portal</h1>
+
+  <section>
+    <label for="player">Select Player:</label>
+    <select id="player"></select>
+
+    <label for="dateRange">Select Date Range:</label>
+    <input type="date" id="startDate">
+    <input type="date" id="endDate">
+
+    <button onclick="loadStats()">View Stats</button>
+  </section>
+
+  <section id="statsDisplay"></section>
+  <section id="pitchGraph"></section>
+
+  <button onclick="downloadReport()">Download Report</button>
+
+  <script src="script.js"></script>
+</body>
+</html>
