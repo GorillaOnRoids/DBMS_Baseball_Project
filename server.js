@@ -60,39 +60,61 @@ app.get('/api/players', (req, res) => {
     });
 });
 
+// UPDATED ENDPOINT: Filter by exact Date instead of Year
 app.get('/api/stats', (req, res) => {
     const pitcherId = req.query.player;
-    const season = req.query.season;
+    const gameDate = req.query.date; // Changed from 'season'
 
+    // Use DATE() function to ensure we compare date parts only
     const sql = `
         SELECT *
         FROM sample_data
         WHERE PitcherId = ?
-          AND YEAR(Date) = ?
+          AND DATE(Date) = ? 
     `;
 
-    connection.query(sql, [pitcherId, season], (err, results) => {
+    connection.query(sql, [pitcherId, gameDate], (err, results) => {
         if (err) {
             console.error("Query error:", err);
             return res.status(500).send("Error fetching stats");
         }
-
         res.json(results);
     });
 });
 
-app.get('/api/seasons', (req, res) => {
+app.get('/api/dates', (req, res) => {
+    const pitcherId = req.query.player;
+    console.log(`Fetching dates for pitcher ID: ${pitcherId}`);
+
+    // QUERY CHECK: Ensure 'sample_data' is the correct table name
+    // and 'Date' is the correct column name.
     const sql = `
-        SELECT DISTINCT YEAR(Date) AS season_year
-        FROM sample_data
-        ORDER BY season_year DESC
+        SELECT DISTINCT Date 
+        FROM sample_data 
+        WHERE PitcherId = ?
+        ORDER BY Date DESC
     `;
 
-    connection.query(sql, (err, results) => {
+    connection.query(sql, [pitcherId], (err, results) => {
         if (err) {
-            console.error(err);
-            return res.status(500).send("Error fetching seasons");
+            // This will print the EXACT SQL error to your terminal
+            console.error(">>> SQL ERROR in /api/dates:", err.sqlMessage); 
+            return res.status(500).send("Database error");
         }
-        res.json(results);
+
+        console.log(`Found ${results.length} dates.`);
+
+        // We format the date here in JavaScript instead of SQL 
+        // to avoid SQL syntax version issues.
+        const formattedResults = results.map(row => {
+            // Create a JS Date object
+            const d = new Date(row.Date);
+            // Convert to YYYY-MM-DD string
+            return { 
+                date_str: d.toISOString().split('T')[0] 
+            };
+        });
+
+        res.json(formattedResults);
     });
 });
