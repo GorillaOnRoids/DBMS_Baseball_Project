@@ -5,16 +5,20 @@
   <title>Pitching Portal</title>
   <link rel="stylesheet" href="style.css">
 </head>
+</head>
 <body>
   <h1>Pitching Data Portal</h1>
 
   <section>
     <label for="player">Select Player:</label>
-    <select id="player"></select>
+    <select id="player">
+      <option value="">Select player</option>
+    </select>
 
-    <label for="dateRange">Select Date Range:</label>
-    <input type="date" id="startDate">
-    <input type="date" id="endDate">
+    <label for="season">Select Season:</label>
+    <select id="season">
+      <option value="">Select season</option>
+    </select>
 
     <button onclick="loadStats()">View Stats</button>
   </section>
