@@ -1,4 +1,4 @@
-async function loadStats() {
+async function loadStats() { //updated load stats, now 
   const player = document.getElementById('player').value;
   const season = document.getElementById('season').value;
 
@@ -43,3 +43,4 @@ window.onload = async () => {
   });
 
 };
+
