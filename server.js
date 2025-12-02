@@ -63,21 +63,27 @@ app.get('/api/players', (req, res) => {
 // UPDATED ENDPOINT: Filter by exact Date instead of Year
 app.get('/api/stats', (req, res) => {
     const pitcherId = req.query.player;
-    const gameDate = req.query.date; // Changed from 'season'
+    const gameDate = req.query.date;
 
-    // Use DATE() function to ensure we compare date parts only
+    console.log(`--- Requesting Stats ---`);
+    console.log(`Player ID: ${pitcherId}`);
+    console.log(`Game Date: ${gameDate}`);
+
     const sql = `
         SELECT *
-        FROM sample_data
+        FROM sample_data 
         WHERE PitcherId = ?
           AND DATE(Date) = ? 
     `;
 
     connection.query(sql, [pitcherId, gameDate], (err, results) => {
         if (err) {
-            console.error("Query error:", err);
+            // This prints the exact error in your terminal
+            console.error(">>> SQL ERROR in /api/stats:", err.sqlMessage); 
             return res.status(500).send("Error fetching stats");
         }
+
+        console.log(`Success: Found ${results.length} rows.`);
         res.json(results);
     });
 });
