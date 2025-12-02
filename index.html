@@ -9,19 +9,19 @@
 <body>
   <h1>Pitching Data Portal</h1>
 
-  <section>
-    <label for="player">Select Player:</label>
-    <select id="player">
-      <option value="">Select player</option>
-    </select>
+<section>
+  <label for="player">Select Player:</label>
+  <select id="player">
+    <option value="">Select player</option>
+  </select>
 
-    <label for="season">Select Season:</label>
-    <select id="season">
-      <option value="">Select season</option>
-    </select>
+  <label for="gameDate">Select Game Date:</label>
+  <select id="gameDate" disabled>
+    <option value="">Select a player first</option>
+  </select>
 
-    <button onclick="loadStats()">View Stats</button>
-  </section>
+  <button onclick="loadStats()">View Stats</button>
+</section>
 
   <section id="statsDisplay"></section>
   <section id="pitchGraph"></section>
