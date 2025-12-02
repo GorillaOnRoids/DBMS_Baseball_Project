@@ -19,7 +19,7 @@ connection.connect(err => {
     console.log("Connected to MySQL!");
 });
 
-app.get('/api/data', (req, res) => {
+app.get('/api/data', (req, res) => { //tester
     const sql = "SELECT * FROM magil_test";
     console.log("Executing:", sql);
 
@@ -34,11 +34,11 @@ app.get('/api/data', (req, res) => {
     });
 });
 
-app.listen(port, () => {
+app.listen(port, () => { //confirms connection
     console.log(`Server running on http://localhost:${port}`);
 });
 
-app.get('/api/players', (req, res) => {
+app.get('/api/players', (req, res) => { //displays the names of pitchers from the drop down
     const sql = `
         SELECT 
             MIN(PitcherId) AS id,
@@ -60,7 +60,7 @@ app.get('/api/players', (req, res) => {
     });
 });
 
-app.get('/api/stats', (req, res) => {
+app.get('/api/stats', (req, res) => { //runs query to make an sql table of the selected pitcher and season the user wants to view
     const pitcherId = req.query.player;
     const season = req.query.season;
 
@@ -81,7 +81,7 @@ app.get('/api/stats', (req, res) => {
     });
 });
 
-app.get('/api/seasons', (req, res) => {
+app.get('/api/seasons', (req, res) => { //displays the seasons a user can select from
     const sql = `
         SELECT DISTINCT YEAR(Date) AS season_year
         FROM sample_data
