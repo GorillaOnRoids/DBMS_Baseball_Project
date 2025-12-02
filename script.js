@@ -8,30 +8,39 @@ async function loadStats() {
       return;
   }
 
-  container.innerHTML = "Loading data...";
+  container.innerHTML = "Calculating metrics...";
 
   try {
-    // 1. Attempt to fetch
     const res = await fetch(`/api/stats?player=${player}&date=${gameDate}`);
-    
-    if (!res.ok) {
-        throw new Error(`Server responded with status: ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`Server status: ${res.status}`);
 
-    // 2. Attempt to parse JSON
     const data = await res.json();
-    console.log("Data received from server:", data); // Check your Browser Console for this!
 
-    // 3. Attempt to display
-    displayStats(data);
+    // CALCULATE USAGE PERCENTAGE HERE
+    // 1. Get total pitches count
+    const totalPitches = data.reduce((sum, row) => sum + row.count, 0);
+
+    // 2. Add calculated fields to the data
+    const processedData = data.map(row => ({
+        "Pitch Type": row.pitch_type,
+        "Count": row.count,
+        "Usage %": ((row.count / totalPitches) * 100).toFixed(1) + '%',
+        "Max Vel": row.max_vel ? row.max_vel.toFixed(1) : "-",
+        "Avg Vel": row.avg_vel ? row.avg_vel.toFixed(1) : "-",
+        "IVB": row.ivb ? row.ivb.toFixed(1) : "-",
+        "HB": row.hb ? row.hb.toFixed(1) : "-",
+        "Horz Rel": row.horz_rel ? row.horz_rel.toFixed(2) : "-",
+        "Vert Rel": row.vert_rel ? row.vert_rel.toFixed(2) : "-",
+        "Spin": row.spin ? Math.round(row.spin) : "-",
+        "Extension": row.extension ? row.extension.toFixed(1) : "-",
+        "Stuff+": null // Placeholder as requested
+    }));
+
+    displayStats(processedData);
 
   } catch (err) {
-    console.error("CRITICAL ERROR:", err);
-    // This will print the ACTUAL error message to your webpage
-    container.innerHTML = `<div style="color:red; font-weight:bold;">
-        Error: ${err.message} <br>
-        (Open Browser Console F12 for details)
-    </div>`;
+    console.error(err);
+    container.innerHTML = `<div style="color:red">Error: ${err.message}</div>`;
   }
 }
 
@@ -39,13 +48,8 @@ function displayStats(stats) {
   const container = document.getElementById('statsDisplay');
   container.innerHTML = '';
 
-  // Safety Check: Is stats actually an array?
-  if (!Array.isArray(stats)) {
-      throw new Error("Server returned data, but it is not a list (Array).");
-  }
-
-  if (stats.length === 0) {
-    container.textContent = 'No stats available for the selected game.';
+  if (!stats || stats.length === 0) {
+    container.textContent = 'No stats available.';
     return;
   }
 
@@ -53,21 +57,17 @@ function displayStats(stats) {
   table.border = '1';
   table.style.borderCollapse = 'collapse';
 
-  // Create Headers dynamically based on the first row
+  // Create Headers
   const headerRow = document.createElement('tr');
-  const firstItem = stats[0];
-  
-  if (!firstItem) {
-      throw new Error("Data exists but the first row is empty.");
-  }
-
-  const headers = Object.keys(firstItem);
+  // We use the keys from the processed data (Pitch Type, Count, etc.)
+  const headers = Object.keys(stats[0]);
   
   headers.forEach(header => {
     const th = document.createElement('th');
     th.textContent = header;
-    th.style.padding = '5px 10px';
-    th.style.backgroundColor = '#f4f4f4';
+    th.style.padding = '8px 12px';
+    th.style.backgroundColor = '#333';
+    th.style.color = '#fff';
     headerRow.appendChild(th);
   });
   table.appendChild(headerRow);
@@ -77,9 +77,10 @@ function displayStats(stats) {
     const tr = document.createElement('tr');
     headers.forEach(header => {
       const td = document.createElement('td');
-      // Safety check: if value is null, show empty string
-      td.textContent = row[header] !== null ? row[header] : ""; 
-      td.style.padding = '5px 10px';
+      // If value is null (like Stuff+), show '-'
+      td.textContent = row[header] !== null ? row[header] : "-"; 
+      td.style.padding = '8px 12px';
+      td.style.textAlign = 'center';
       tr.appendChild(td);
     });
     table.appendChild(tr);
