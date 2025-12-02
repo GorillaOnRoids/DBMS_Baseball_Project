@@ -65,25 +65,36 @@ app.get('/api/stats', (req, res) => {
     const pitcherId = req.query.player;
     const gameDate = req.query.date;
 
-    console.log(`--- Requesting Stats ---`);
-    console.log(`Player ID: ${pitcherId}`);
-    console.log(`Game Date: ${gameDate}`);
+    console.log(`--- Aggregating Stats ---`);
+    console.log(`Player: ${pitcherId}, Date: ${gameDate}`);
 
+    // NOTE: You must verify these column names match your database!
+    // I have guessed standard names: 'TaggedPitchType', 'RelSpeed', 'InducedVertBreak', etc.
     const sql = `
-        SELECT *
-        FROM sample_data 
-        WHERE PitcherId = ?
-          AND DATE(Date) = ? 
+        SELECT 
+            TaggedPitchType as pitch_type,
+            COUNT(*) as count,
+            MAX(RelSpeed) as max_vel,
+            AVG(RelSpeed) as avg_vel,
+            AVG(InducedVertBreak) as ivb,
+            AVG(HorzBreak) as hb,         -- REPLACE with your Horizontal Break column
+            AVG(RelSide) as horz_rel,     -- REPLACE with your Horizontal Release column
+            AVG(RelHeight) as vert_rel,   -- REPLACE with your Vertical Release column
+            AVG(SpinRate) as spin,
+            AVG(Extension) as extension
+        FROM sample_data
+        WHERE PitcherId = ? 
+          AND DATE(Date) = ?
+        GROUP BY TaggedPitchType
     `;
 
     connection.query(sql, [pitcherId, gameDate], (err, results) => {
         if (err) {
-            // This prints the exact error in your terminal
-            console.error(">>> SQL ERROR in /api/stats:", err.sqlMessage); 
-            return res.status(500).send("Error fetching stats");
+            console.error(">>> SQL ERROR:", err.sqlMessage); 
+            return res.status(500).send("Database error");
         }
 
-        console.log(`Success: Found ${results.length} rows.`);
+        console.log(`Aggregated into ${results.length} pitch types.`);
         res.json(results);
     });
 });
