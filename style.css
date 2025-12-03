@@ -23,3 +23,43 @@ button {
   border: none;
   cursor: pointer;
 }
+
+/* NAVBAR CONTAINER */
+.navbar {
+  background-color: #ae4545;
+  padding: 15px 25px;
+  border-radius: 8px;
+  margin-bottom: 25px;
+}
+
+/* REMOVE BULLETS */
+.navbar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 20px;
+}
+
+/* NAV LINKS */
+.navbar a {
+  color: white;
+  text-decoration: none;
+  font-size: 18px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 6px;
+  transition: background 0.3s, transform 0.2s;
+}
+
+/* HOVER EFFECT */
+.navbar a:hover {
+  background-color: #752e2e;
+  transform: scale(1.05);
+}
+
+/* OPTIONAL — center the menu */
+.navbar ul {
+  justify-content: center;
+}
+
