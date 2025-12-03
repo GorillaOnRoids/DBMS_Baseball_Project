@@ -1,3 +1,16 @@
+async function loadNavbar() {
+  const navbarContainer = document.getElementById("navbar");
+  if (!navbarContainer) return;
+
+  // Load navBar.html file
+  const res = await fetch("navBar.html");
+  const html = await res.text();
+
+  navbarContainer.innerHTML = html;
+}
+
+// Load on startup
+loadNavbar();
 async function loadStats() {
   const player = document.getElementById('player').value;
   const gameDate = document.getElementById('gameDate').value;
@@ -251,3 +264,4 @@ window.onload = async () => {
     console.error("Error fetching players:", err);
   }
 };
+
