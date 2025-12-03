@@ -44,6 +44,8 @@ async function loadStats() {
   }
 }
 
+
+
 function displayStats(stats) {
   const container = document.getElementById('statsDisplay');
   container.innerHTML = '';
@@ -53,13 +55,51 @@ function displayStats(stats) {
     return;
   }
 
+  // --- DEFINE PITCH COLORS ---
+  // We use lowercase keys to match the database values robustly
+  const pitchColors = {
+      'fastball': '#d22d49',           // Red
+      'four-seam fastball': '#d22d49', 
+      'fourseamfastball': '#d22d49',
+      'four-seam': '#d22d49', 
+      'ff': '#d22d49',
+      
+      'sinker': '#fe9d00',             // Orange
+      'si': '#fe9d00',
+      'sink': '#fe9d00',
+      'two-seam fastball': '#fe9d00',
+      
+      'cutter': '#933f2c',             // Dark Red
+      'fc': '#933f2c',
+      'cut': '#933f2c',
+      
+      'slider': '#eee716',             // Yellow
+      'sl': '#eee716',
+      'sweeper': '#eee716',
+      'st': '#eee716',        
+      
+      'curveball': '#00d1ed',          // Cyan/Blue
+      'cu': '#00d1ed',
+      'cb': '#00d1ed',
+      
+      'knuckle curve': '#3c44cd',      // Darker Blue
+      'kc': '#3c44cd',
+      
+      'changeup': '#1db053',           // Green
+      'ch': '#1db053',
+      'change': '#1db053',
+      
+      'splitter': '#3ea430',           // Darker Green
+      'fs': '#3ea430',
+      'spl': '#3ea430'
+  };
+
   const table = document.createElement('table');
   table.border = '1';
   table.style.borderCollapse = 'collapse';
 
   // Create Headers
   const headerRow = document.createElement('tr');
-  // We use the keys from the processed data (Pitch Type, Count, etc.)
   const headers = Object.keys(stats[0]);
   
   headers.forEach(header => {
@@ -77,10 +117,34 @@ function displayStats(stats) {
     const tr = document.createElement('tr');
     headers.forEach(header => {
       const td = document.createElement('td');
-      // If value is null (like Stuff+), show '-'
-      td.textContent = row[header] !== null ? row[header] : "-"; 
+      let value = row[header] !== null ? row[header] : "-";
+      
+      td.textContent = value; 
       td.style.padding = '8px 12px';
       td.style.textAlign = 'center';
+
+      // --- COLOR LOGIC ---
+      if (header === "Pitch Type" && value !== "-") {
+          // 1. Convert value to lowercase and trim spaces for matching
+          const cleanValue = String(value).trim().toLowerCase();
+          
+          if (pitchColors[cleanValue]) {
+              // 2. Apply background color
+              td.style.setProperty('background-color', pitchColors[cleanValue], 'important');
+              td.style.fontWeight = 'bold';
+              
+              // 3. Set text color to white for dark backgrounds, black for light
+              const darkBackgrounds = ['#933f2c', '#3c44cd', '#d22d49', '#3ea430'];
+              if (darkBackgrounds.includes(pitchColors[cleanValue])) {
+                  td.style.color = 'white';
+              } else {
+                  td.style.color = 'black';
+              }
+          } else {
+             console.log(`No color match for: ${cleanValue}`);
+          }
+      }
+
       tr.appendChild(td);
     });
     table.appendChild(tr);
@@ -88,7 +152,6 @@ function displayStats(stats) {
 
   container.appendChild(table);
 }
-
 function downloadReport() {
   const table = document.querySelector('#statsDisplay table');
 
