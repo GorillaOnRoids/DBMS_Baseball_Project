@@ -19,27 +19,12 @@ connection.connect(err => {
     console.log("Connected to MySQL!");
 });
 
-/*app.get('/api/data', (req, res) => {
-    const sql = "SELECT * FROM magil_test";
-    console.log("Executing:", sql);
 
-    connection.query(sql, (err, results) => {
-        if (err) {
-            console.error("Query error:", err);
-            return res.status(500).send("Error fetching data");
-        }
-
-        console.log("Results:", results);
-        res.json(results);
-    });
-});*/
-
-// LINE GRAPHS ---
+// Line graphs
 app.get('/api/stats/history', (req, res) => {
     const pitcherId = req.query.player;
 
-    // We use "Date AS game_date" so the frontend JavaScript receives the key "game_date"
-    // We use "Date" in the ORDER BY clause because that is the actual column name in your DB
+    
     const sql = `
         SELECT Date AS game_date, EffectiveVelo, PitchCall, Pitcher
         FROM sample_data
@@ -52,7 +37,6 @@ app.get('/api/stats/history', (req, res) => {
             console.error("Error fetching history stats:", err);
             return res.status(500).send("Error fetching stats");
         }
-        // console.log(`Fetched ${results.length} rows for history.`); // Uncomment to debug
         res.json(results);
     });
 });
@@ -83,7 +67,7 @@ app.get('/api/players', (req, res) => {
     });
 });
 
-// UPDATED ENDPOINT: Filter by exact Date instead of Year
+// Find by exact Date 
 app.get('/api/stats', (req, res) => {
     const pitcherId = req.query.player;
     const gameDate = req.query.date;
@@ -91,8 +75,6 @@ app.get('/api/stats', (req, res) => {
     console.log(`--- Aggregating Stats ---`);
     console.log(`Player: ${pitcherId}, Date: ${gameDate}`);
 
-    // NOTE: You must verify these column names match your database!
-    // I have guessed standard names: 'TaggedPitchType', 'RelSpeed', 'InducedVertBreak', etc.
     const sql = `
         SELECT 
             TaggedPitchType as pitch_type,
@@ -108,8 +90,7 @@ app.get('/api/stats', (req, res) => {
         FROM sample_data
         WHERE PitcherId = ? 
           AND DATE(Date) = ?
-        GROUP BY TaggedPitchType
-    `;
+        GROUP BY TaggedPitchType`;
 
     connection.query(sql, [pitcherId, gameDate], (err, results) => {
         if (err) {
@@ -126,14 +107,12 @@ app.get('/api/dates', (req, res) => {
     const pitcherId = req.query.player;
     console.log(`Fetching dates for pitcher ID: ${pitcherId}`);
 
-    // QUERY CHECK: Ensure 'sample_data' is the correct table name
-    // and 'Date' is the correct column name.
+ 
     const sql = `
         SELECT DISTINCT Date 
         FROM sample_data 
         WHERE PitcherId = ?
-        ORDER BY Date DESC
-    `;
+        ORDER BY Date DESC`;
 
     connection.query(sql, [pitcherId], (err, results) => {
         if (err) {
@@ -144,8 +123,6 @@ app.get('/api/dates', (req, res) => {
 
         console.log(`Found ${results.length} dates.`);
 
-        // We format the date here in JavaScript instead of SQL 
-        // to avoid SQL syntax version issues.
         const formattedResults = results.map(row => {
             // Create a JS Date object
             const d = new Date(row.Date);
@@ -161,14 +138,13 @@ app.get('/api/dates', (req, res) => {
 
 // server.js - ADDITION (The one and only /api/pitchDataForDate route)
 
-// NEW ENDPOINT: Fetch all pitch data for a player on a specific DATE
+// Find all pitch data for a player on a specific DATE
 app.get('/api/pitchDataForDate', (req, res) => {
     const pitcherId = req.query.player;
     const gameDate = req.query.date;
 
     console.log(`--- Fetching pitch data for player ${pitcherId} on ${gameDate} ---`);
 
-    // NOTE: Ensure these column names match your 'sample_data' table!
     const sql = `
         SELECT 
             TaggedPitchType,
