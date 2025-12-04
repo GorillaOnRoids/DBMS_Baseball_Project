@@ -45,7 +45,7 @@ async function loadStats() {
         "Horz Rel": row.horz_rel ? row.horz_rel.toFixed(2) : "-",
         "Vert Rel": row.vert_rel ? row.vert_rel.toFixed(2) : "-",
         "Spin": row.spin ? Math.round(row.spin) : "-",
-        "Extension": row.extension ? row.extension.toFixed(1) : "-",
+        "Extension": row.extension ? row.extension.toFixed(1) : "-"
         //"Stuff+": null // Placeholder, waiting for direction from client
     }));
 
@@ -264,5 +264,6 @@ window.onload = async () => {
     console.error("Error fetching players:", err);
   }
 };
+
 
 
