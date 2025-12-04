@@ -10,7 +10,7 @@ async function loadNavbar() {
   navbarContainer.innerHTML = html;
 }
 
-// Load on startup
+// Load on start
 loadNavbar();
 
 async function loadStats() {
@@ -31,11 +31,11 @@ async function loadStats() {
 
     const data = await res.json();
 
-    // CALCULATE USAGE PERCENTAGE HERE
-    // 1. Get total pitches count
+    // CALCULATE USAGE PERCENTAGE 
+    // Get total pitches count
     const totalPitches = data.reduce((sum, row) => sum + row.count, 0);
 
-    // 2. Add calculated fields to the data
+    // Add calculated fields to the data
     const processedData = data.map(row => ({
         "Pitch Type": row.pitch_type,
         "Count": row.count,
@@ -71,7 +71,6 @@ function displayStats(stats) {
   }
 
   // --- DEFINE PITCH COLORS ---
-  // We use lowercase keys to match the database values robustly
   const pitchColors = {
       'fastball': '#d22d49',           // Red
       'four-seam fastball': '#d22d49', 
@@ -109,6 +108,7 @@ function displayStats(stats) {
       'spl': '#3ea430'
   };
 
+  //Make table for stats
   const table = document.createElement('table');
   table.border = '1';
   table.style.borderCollapse = 'collapse';
@@ -138,7 +138,7 @@ function displayStats(stats) {
       td.style.padding = '8px 12px';
       td.style.textAlign = 'center';
 
-      // --- COLOR LOGIC ---
+      // Color logic
       if (header === "Pitch Type" && value !== "-") {
           // 1. Convert value to lowercase and trim spaces for matching
           const cleanValue = String(value).trim().toLowerCase();
@@ -266,4 +266,5 @@ window.onload = async () => {
     console.error("Error fetching players:", err);
   }
 };
+
 
