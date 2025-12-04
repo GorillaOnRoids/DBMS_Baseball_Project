@@ -7,8 +7,8 @@ app.use(express.static(__dirname));
 const connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'KtPfw05gs67!',
-    database: 'pitchers_data'
+    password: '1Booboos123!',
+    database: 'dbms_finalproject'
 });
 
 connection.connect(err => {
@@ -133,5 +133,41 @@ app.get('/api/dates', (req, res) => {
         });
 
         res.json(formattedResults);
+    });
+});
+
+// server.js - ADDITION (The one and only /api/pitchDataForDate route)
+
+// NEW ENDPOINT: Fetch all pitch data for a player on a specific DATE
+app.get('/api/pitchDataForDate', (req, res) => {
+    const pitcherId = req.query.player;
+    const gameDate = req.query.date;
+
+    console.log(`--- Fetching pitch data for player ${pitcherId} on ${gameDate} ---`);
+
+    // NOTE: Ensure these column names match your 'sample_data' table!
+    const sql = `
+        SELECT 
+            TaggedPitchType,
+            RelSpeed,
+            InducedVertBreak,
+            HorzBreak,         
+            RelSide,     
+            RelHeight,   
+            SpinRate,
+            Extension
+        FROM sample_data
+        WHERE PitcherId = ? 
+          AND DATE(Date) = ? 
+    `;
+
+    connection.query(sql, [pitcherId, gameDate], (err, results) => {
+        if (err) {
+            console.error(">>> SQL ERROR in /api/pitchDataForDate:", err.sqlMessage); 
+            return res.status(500).send("Database error");
+        }
+
+        console.log(`Found ${results.length} pitches for the game.`);
+        res.json(results);
     });
 });

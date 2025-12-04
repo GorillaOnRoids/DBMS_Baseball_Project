@@ -5,13 +5,17 @@
   <title>Pitching Portal</title>
   <link rel="stylesheet" href="style-2.css">
   
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
   <h1>Pitching Data Portal</h1>
 
- <div id="navbar"></div>
+  <div id="navbar"></div>
+
+  
 
 <section>
   <label for="player">Select Player:</label>
@@ -24,10 +28,29 @@
     <option value="">Select a player first</option>
   </select>
 
-  <button onclick="loadStats()">View Stats</button>
+  <button>View Stats</button> 
 </section>
 <br>
 <br>
+
+<section>
+    <h2>Pitch Data Relationship Scatterplot</h2>
+
+    <div class="controls" style="margin-bottom: 20px;">
+        <label for="xAxis">X-Axis:</label>
+        <select id="xAxis">
+            </select>
+
+        <label for="yAxis">Y-Axis:</label>
+        <select id="yAxis">
+            </select>
+    </div>
+
+    <div class="chart-wrapper" style="height: 500px; width: 90%; max-width: 800px; margin: 20px auto;">
+        <canvas id="scatterChart"></canvas>
+    </div>
+</section>
+
   <section id="statsDisplay"></section>
   <section id="pitchGraph"></section>
 <br>
@@ -37,4 +60,3 @@
   <script src="script.js"></script>
 </body>
 </html>
-
