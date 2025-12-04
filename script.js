@@ -46,7 +46,7 @@ async function loadStats() {
         "Vert Rel": row.vert_rel ? row.vert_rel.toFixed(2) : "-",
         "Spin": row.spin ? Math.round(row.spin) : "-",
         "Extension": row.extension ? row.extension.toFixed(1) : "-",
-        "Stuff+": null // Placeholder as requested
+        //"Stuff+": null // Placeholder, waiting for direction from client
     }));
 
     displayStats(processedData);
@@ -264,4 +264,5 @@ window.onload = async () => {
     console.error("Error fetching players:", err);
   }
 };
+
 
