@@ -71,7 +71,7 @@ async function loadAllStats() {
   const tableContainer = document.getElementById('statsDisplay');
 
   if (!player || !gameDate) {
-      // Clear both outputs if selections are incomplete
+      // Clear both outputs if selections are not done
       tableContainer.innerHTML = 'Select a player and a game date to view report.';
       clearScatterplot(); // New helper function
       return;
@@ -147,7 +147,6 @@ function displayStats(stats) {
   }
 
   // --- DEFINE PITCH COLORS ---
-  // We use lowercase keys to match the database values robustly
   const pitchColors = {
       'fastball': '#d22d49',           // Red
       'four-seam fastball': '#d22d49', 
@@ -184,7 +183,7 @@ function displayStats(stats) {
       'fs': '#3ea430',
       'spl': '#3ea430'
   };
-
+//Create table to view stats
   const table = document.createElement('table');
   table.border = '1';
   table.style.borderCollapse = 'collapse';
@@ -216,15 +215,15 @@ function displayStats(stats) {
 
       // --- COLOR LOGIC ---
       if (header === "Pitch Type" && value !== "-") {
-          // 1. Convert value to lowercase and trim spaces for matching
+          // Convert value to lowercase and trim spaces for matching
           const cleanValue = String(value).trim().toLowerCase();
           
           if (pitchColors[cleanValue]) {
-              // 2. Apply background color
+              // Apply background color
               td.style.setProperty('background-color', pitchColors[cleanValue], 'important');
               td.style.fontWeight = 'bold';
               
-              // 3. Set text color to white for dark backgrounds, black for light
+              // Set text color to white for dark backgrounds, black for light
               const darkBackgrounds = ['#933f2c', '#3c44cd', '#d22d49', '#3ea430'];
               if (darkBackgrounds.includes(pitchColors[cleanValue])) {
                   td.style.color = 'white';
@@ -287,7 +286,7 @@ async function getPitchData(playerId, gameDate) {
         return pitchDataCache[cacheKey];
     }
     
-    // Calls the new /api/pitchDataForDate endpoint on the server
+    // Calls the new /api/pitchDataForDate on the server
     const res = await fetch(`/api/pitchDataForDate?player=${playerId}&date=${gameDate}`);
     if (!res.ok) throw new Error(`Server status: ${res.status} when fetching pitch-level data.`);
 
@@ -302,7 +301,6 @@ async function loadAndRenderScatterplot(playerId, gameDate, xAxisKey, yAxisKey) 
 
     const pitchTypes = [...new Set(data.map(d => d.TaggedPitchType))].filter(Boolean).sort();
     const datasets = [];
-    // Assuming getPitchColors is a separate function containing your pitchColors map
     const pitchColors = getPitchColors(); 
 
     pitchTypes.forEach(type => {
@@ -333,7 +331,6 @@ function clearScatterplot(message = "Select player and game date to view scatter
     if (scatterChartInstance) {
         scatterChartInstance.destroy();
     }
-    // Re-render message if canvas exists (requires index.html change)
     if (chartCanvas) {
         const ctx = chartCanvas.getContext('2d');
         ctx.font = "12px Arial";
@@ -355,7 +352,6 @@ function renderScatterChart(datasets, xAxisKey, yAxisKey) {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                // ... tooltip and legend options ...
                 title: {
                     display: true,
                     text: `${SCATTER_METRICS[yAxisKey]} vs ${SCATTER_METRICS[xAxisKey]}`
@@ -379,11 +375,41 @@ function renderScatterChart(datasets, xAxisKey, yAxisKey) {
 // Ensure getPitchColors is accessible if it's not global
 // You can move the pitchColors object from displayStats into a new function:
 function getPitchColors() {
-    // Return the pitchColors object defined in your original script.js:
     return {
-        'fastball': '#d22d49',           
-        'four-seam fastball': '#d22d49', 
-        // ... (etc.)
+      'fastball': '#d22d49',           // Red
+      'four-seam fastball': '#d22d49', 
+      'fourseamfastball': '#d22d49',
+      'four-seam': '#d22d49', 
+      'ff': '#d22d49',
+      
+      'sinker': '#fe9d00',             // Orange
+      'si': '#fe9d00',
+      'sink': '#fe9d00',
+      'two-seam fastball': '#fe9d00',
+      
+      'cutter': '#933f2c',             // Dark Red
+      'fc': '#933f2c',
+      'cut': '#933f2c',
+      
+      'slider': '#eee716',             // Yellow
+      'sl': '#eee716',
+      'sweeper': '#eee716',
+      'st': '#eee716',        
+      
+      'curveball': '#00d1ed',          // Cyan/Blue
+      'cu': '#00d1ed',
+      'cb': '#00d1ed',
+      
+      'knuckle curve': '#3c44cd',      // Darker Blue
+      'kc': '#3c44cd',
+      
+      'changeup': '#1db053',           // Green
+      'ch': '#1db053',
+      'change': '#1db053',
+      
+      'splitter': '#3ea430',           // Darker Green
+      'fs': '#3ea430',
+      'spl': '#3ea430'
     };
 }
 
@@ -419,8 +445,8 @@ async function loadGameDates(playerId) {
 window.onload = async () => {
     const selectPlayer = document.getElementById('player');
     const selectDate = document.getElementById('gameDate');
-    const xAxisSelect = document.getElementById('xAxis'); // Assuming you added these HTML elements
-    const yAxisSelect = document.getElementById('yAxis'); // Assuming you added these HTML elements
+    const xAxisSelect = document.getElementById('xAxis'); 
+    const yAxisSelect = document.getElementById('yAxis'); 
 
     // --- 1. Load Players (RESTORED ORIGINAL LOGIC) ---
     try {
@@ -441,9 +467,7 @@ window.onload = async () => {
     } catch (err) {
         console.error("Error fetching players:", err);
     }
-    // ------------------------------------------
 
-    // --- 2. Initialize Event Listeners ---
     if (selectPlayer) {
         selectPlayer.addEventListener('change', (e) => {
             const playerId = e.target.value;
@@ -465,15 +489,15 @@ window.onload = async () => {
     // Set the "View Stats" button to use the new unified function
     const viewStatsButton = document.querySelector('button'); 
     if (viewStatsButton && viewStatsButton.textContent.trim() === 'View Stats') {
-        viewStatsButton.onclick = loadAllStats; // Calls the new unified loader
+        viewStatsButton.onclick = loadAllStats; 
     }
     
-    // Axis listeners for scatterplot updates (assuming they exist in HTML)
+    // Axis listeners for scatterplot updates 
     if (xAxisSelect) xAxisSelect.addEventListener('change', loadAllStats);
     if (yAxisSelect) yAxisSelect.addEventListener('change', loadAllStats);
     // ------------------------------------------
 
-    // --- 3. Initialize Scatterplot Dropdowns (New Logic) ---
+    // --- 3. Initialize Scatterplot Dropdowns  ---
     if (xAxisSelect && yAxisSelect) {
         // SCATTER_METRICS must be defined globally for this to work
         const keys = Object.keys(SCATTER_METRICS); 
@@ -492,4 +516,4 @@ window.onload = async () => {
     clearScatterplot();
 };
 
-// ... (Rest of script.js with added scatterplot functions and renamed table function)
+
