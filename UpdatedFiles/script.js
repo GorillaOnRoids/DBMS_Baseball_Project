@@ -10,32 +10,107 @@ async function loadNavbar() {
   navbarContainer.innerHTML = html;
 }
 
-// Load on start
+// script.js - ADDITIONS near the top
+
+let pitchDataCache = {}; // Cache for full pitch data (used by scatterplot)
+let scatterChartInstance = null; 
+
+// Metrics list for scatterplot dropdowns
+const SCATTER_METRICS = {
+    'RelSpeed': 'Release Speed (MPH)',
+    'InducedVertBreak': 'Induced Vertical Break (in)',
+    'HorzBreak': 'Horizontal Break (in)',
+    'RelSide': 'Horizontal Release (ft)',
+    'RelHeight': 'Vertical Release (ft)',
+    'SpinRate': 'Spin Rate (RPM)',
+    'Extension': 'Extension (ft)',
+};
+
+// Moved pitch colors into a function for re-use
+function getPitchColors() {
+  return {
+      'fastball': '#d22d49',           
+      'four-seam fastball': '#d22d49', 
+      'fourseamfastball': '#d22d49',
+      'four-seam': '#d22d49', 
+      'ff': '#d22d49',
+      'sinker': '#fe9d00',             
+      'si': '#fe9d00',
+      'sink': '#fe9d00',
+      'two-seam fastball': '#fe9d00',
+      'cutter': '#933f2c',             
+      'fc': '#933f2c',
+      'cut': '#933f2c',
+      'slider': '#eee716',             
+      'sl': '#eee716',
+      'sweeper': '#eee716',
+      'st': '#eee716',        
+      'curveball': '#00d1ed',          
+      'cu': '#00d1ed',
+      'cb': '#00d1ed',
+      'knuckle curve': '#3c44cd',      
+      'kc': '#3c44cd',
+      'changeup': '#1db053',           
+      'ch': '#1db053',
+      'change': '#1db053',
+      'splitter': '#3ea430',           
+      'fs': '#3ea430',
+      'spl': '#3ea430'
+  };
+}
+
+
+// Load on startup
 loadNavbar();
 
-async function loadStats() {
+// script.js - REPLACEMENT for async function loadStats()
+
+async function loadAllStats() {
   const player = document.getElementById('player').value;
   const gameDate = document.getElementById('gameDate').value;
-  const container = document.getElementById('statsDisplay');
+  const tableContainer = document.getElementById('statsDisplay');
 
   if (!player || !gameDate) {
-      alert("Please select a player and a game date.");
+      // Clear both outputs if selections are incomplete
+      tableContainer.innerHTML = 'Select a player and a game date to view report.';
+      clearScatterplot(); // New helper function
       return;
   }
 
-  container.innerHTML = "Calculating metrics...";
+  tableContainer.innerHTML = "Calculating metrics for table report...";
+  clearScatterplot("Loading pitch data for scatterplot...");
 
+  try {
+    // 1. Load Aggregated Stats (For Table Report)
+    await loadStatsTable(player, gameDate);
+
+    // 2. Load and Render Scatterplot
+    const xAxisKey = document.getElementById('xAxis').value;
+    const yAxisKey = document.getElementById('yAxis').value;
+    await loadAndRenderScatterplot(player, gameDate, xAxisKey, yAxisKey);
+
+  } catch (err) {
+    console.error("Error in loadAllStats:", err);
+    tableContainer.innerHTML = `<div style="color:red">Error loading report: ${err.message}</div>`;
+    clearScatterplot(`Error loading scatterplot data.`);
+  }
+}
+
+// RENAME your existing loadStats function to loadStatsTable 
+// and ensure it no longer contains the alert for missing player/date.
+// It should only contain the fetch to /api/stats and the call to displayStats.
+async function loadStatsTable(player, gameDate) {
+  const container = document.getElementById('statsDisplay');
+  // ... (Your original fetch('/api/stats...') and processing logic here)
   try {
     const res = await fetch(`/api/stats?player=${player}&date=${gameDate}`);
     if (!res.ok) throw new Error(`Server status: ${res.status}`);
 
     const data = await res.json();
 
-    // CALCULATE USAGE PERCENTAGE 
-    // Get total pitches count
+    // CALCULATE USAGE PERCENTAGE HERE
     const totalPitches = data.reduce((sum, row) => sum + row.count, 0);
 
-    // Add calculated fields to the data
     const processedData = data.map(row => ({
         "Pitch Type": row.pitch_type,
         "Count": row.count,
@@ -48,16 +123,17 @@ async function loadStats() {
         "Vert Rel": row.vert_rel ? row.vert_rel.toFixed(2) : "-",
         "Spin": row.spin ? Math.round(row.spin) : "-",
         "Extension": row.extension ? row.extension.toFixed(1) : "-"
-        //"Stuff+": null // Placeholder as requested
     }));
 
     displayStats(processedData);
 
   } catch (err) {
     console.error(err);
-    container.innerHTML = `<div style="color:red">Error: ${err.message}</div>`;
+    throw new Error("Failed to load table metrics."); // Throw error for loadAllStats to catch
   }
 }
+// ... (rest of the file follows)
+
 
 
 
@@ -71,6 +147,7 @@ function displayStats(stats) {
   }
 
   // --- DEFINE PITCH COLORS ---
+  // We use lowercase keys to match the database values robustly
   const pitchColors = {
       'fastball': '#d22d49',           // Red
       'four-seam fastball': '#d22d49', 
@@ -108,7 +185,6 @@ function displayStats(stats) {
       'spl': '#3ea430'
   };
 
-  //Make table for stats
   const table = document.createElement('table');
   table.border = '1';
   table.style.borderCollapse = 'collapse';
@@ -138,7 +214,7 @@ function displayStats(stats) {
       td.style.padding = '8px 12px';
       td.style.textAlign = 'center';
 
-      // Color logic
+      // --- COLOR LOGIC ---
       if (header === "Pitch Type" && value !== "-") {
           // 1. Convert value to lowercase and trim spaces for matching
           const cleanValue = String(value).trim().toLowerCase();
@@ -202,6 +278,115 @@ function downloadReport() {
   doc.save(`Stats_${safeName}_${gameDate}.pdf`);
 }
 
+// script.js - ADDITIONS (Scatterplot Logic)
+
+// --- Pitch-Level Data Fetching ---
+async function getPitchData(playerId, gameDate) {
+    const cacheKey = `${playerId}_${gameDate}`; 
+    if (pitchDataCache[cacheKey]) {
+        return pitchDataCache[cacheKey];
+    }
+    
+    // Calls the new /api/pitchDataForDate endpoint on the server
+    const res = await fetch(`/api/pitchDataForDate?player=${playerId}&date=${gameDate}`);
+    if (!res.ok) throw new Error(`Server status: ${res.status} when fetching pitch-level data.`);
+
+    const data = await res.json();
+    pitchDataCache[cacheKey] = data; 
+    return data;
+}
+
+// --- Rendering Logic ---
+async function loadAndRenderScatterplot(playerId, gameDate, xAxisKey, yAxisKey) {
+    const data = await getPitchData(playerId, gameDate);
+
+    const pitchTypes = [...new Set(data.map(d => d.TaggedPitchType))].filter(Boolean).sort();
+    const datasets = [];
+    // Assuming getPitchColors is a separate function containing your pitchColors map
+    const pitchColors = getPitchColors(); 
+
+    pitchTypes.forEach(type => {
+        const filteredPitches = data.filter(d => d.TaggedPitchType === type);
+        const colorKey = String(type).trim().toLowerCase();
+        const color = pitchColors[colorKey] || '#888'; 
+
+        datasets.push({
+            label: type,
+            data: filteredPitches
+                .map(d => ({ 
+                    x: parseFloat(d[xAxisKey]), 
+                    y: parseFloat(d[yAxisKey]) 
+                }))
+                .filter(point => !isNaN(point.x) && !isNaN(point.y)),
+            backgroundColor: color,
+            borderColor: color,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+        });
+    });
+
+    renderScatterChart(datasets, xAxisKey, yAxisKey);
+}
+
+function clearScatterplot(message = "Select player and game date to view scatterplot.") {
+    const chartCanvas = document.getElementById('scatterChart');
+    if (scatterChartInstance) {
+        scatterChartInstance.destroy();
+    }
+    // Re-render message if canvas exists (requires index.html change)
+    if (chartCanvas) {
+        const ctx = chartCanvas.getContext('2d');
+        ctx.font = "12px Arial";
+        ctx.fillStyle = "gray";
+        ctx.textAlign = "center";
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.fillText(message, ctx.canvas.width / 2, ctx.canvas.height / 2);
+    }
+}
+
+function renderScatterChart(datasets, xAxisKey, yAxisKey) {
+    const ctx = document.getElementById('scatterChart').getContext('2d');
+    if (scatterChartInstance) scatterChartInstance.destroy();
+
+    scatterChartInstance = new Chart(ctx, {
+        type: 'scatter',
+        data: { datasets: datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                // ... tooltip and legend options ...
+                title: {
+                    display: true,
+                    text: `${SCATTER_METRICS[yAxisKey]} vs ${SCATTER_METRICS[xAxisKey]}`
+                }
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    position: 'bottom',
+                    title: { display: true, text: SCATTER_METRICS[xAxisKey] }
+                },
+                y: {
+                    type: 'linear',
+                    title: { display: true, text: SCATTER_METRICS[yAxisKey] }
+                }
+            }
+        }
+    });
+}
+
+// Ensure getPitchColors is accessible if it's not global
+// You can move the pitchColors object from displayStats into a new function:
+function getPitchColors() {
+    // Return the pitchColors object defined in your original script.js:
+    return {
+        'fastball': '#d22d49',           
+        'four-seam fastball': '#d22d49', 
+        // ... (etc.)
+    };
+}
+
 async function loadGameDates(playerId) {
   const selectDate = document.getElementById('gameDate');
   selectDate.innerHTML = '<option value="">Loading...</option>';
@@ -229,42 +414,82 @@ async function loadGameDates(playerId) {
   }
 }
 
+// script.js - CORRECTED window.onload FUNCTION
+
 window.onload = async () => {
-  const selectPlayer = document.getElementById('player');
-  const selectDate = document.getElementById('gameDate');
+    const selectPlayer = document.getElementById('player');
+    const selectDate = document.getElementById('gameDate');
+    const xAxisSelect = document.getElementById('xAxis'); // Assuming you added these HTML elements
+    const yAxisSelect = document.getElementById('yAxis'); // Assuming you added these HTML elements
 
-  if (selectPlayer) {
-      selectPlayer.addEventListener('change', (e) => {
-        const playerId = e.target.value;
-        if (playerId) {
-          loadGameDates(playerId);
-        } else {
-          if(selectDate) {
-             selectDate.innerHTML = '<option value="">Select player first</option>';
-             selectDate.disabled = true;
-          }
-        }
-      });
-  }
+    // --- 1. Load Players (RESTORED ORIGINAL LOGIC) ---
+    try {
+        const res = await fetch('/api/players');
+        const players = await res.json();
+        
+        selectPlayer.innerHTML = '<option value="">Select player</option>';
+        const seen = new Set();
+        players.forEach(p => {
+            if (!seen.has(p.id)) {
+                seen.add(p.id);
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.name;
+                selectPlayer.appendChild(opt);
+            }
+        });
+    } catch (err) {
+        console.error("Error fetching players:", err);
+    }
+    // ------------------------------------------
 
-  try {
-    const res = await fetch('/api/players');
-    const players = await res.json();
+    // --- 2. Initialize Event Listeners ---
+    if (selectPlayer) {
+        selectPlayer.addEventListener('change', (e) => {
+            const playerId = e.target.value;
+            if (playerId) {
+                loadGameDates(playerId);
+            } else {
+                if (selectDate) {
+                    selectDate.innerHTML = '<option value="">Select player first</option>';
+                    selectDate.disabled = true;
+                }
+            }
+            // Clear reports when player changes
+            const statsDisplay = document.getElementById('statsDisplay');
+            if (statsDisplay) statsDisplay.innerHTML = '';
+            clearScatterplot(); // New scatterplot helper function
+        });
+    }
     
-    selectPlayer.innerHTML = '<option value="">Select player</option>';
-    const seen = new Set();
-    players.forEach(p => {
-      if (!seen.has(p.id)) {
-        seen.add(p.id);
-        const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = p.name;
-        selectPlayer.appendChild(opt);
-      }
-    });
-  } catch (err) {
-    console.error("Error fetching players:", err);
-  }
+    // Set the "View Stats" button to use the new unified function
+    const viewStatsButton = document.querySelector('button'); 
+    if (viewStatsButton && viewStatsButton.textContent.trim() === 'View Stats') {
+        viewStatsButton.onclick = loadAllStats; // Calls the new unified loader
+    }
+    
+    // Axis listeners for scatterplot updates (assuming they exist in HTML)
+    if (xAxisSelect) xAxisSelect.addEventListener('change', loadAllStats);
+    if (yAxisSelect) yAxisSelect.addEventListener('change', loadAllStats);
+    // ------------------------------------------
+
+    // --- 3. Initialize Scatterplot Dropdowns (New Logic) ---
+    if (xAxisSelect && yAxisSelect) {
+        // SCATTER_METRICS must be defined globally for this to work
+        const keys = Object.keys(SCATTER_METRICS); 
+        keys.forEach(key => {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = SCATTER_METRICS[key];
+            xAxisSelect.appendChild(option.cloneNode(true));
+            yAxisSelect.appendChild(option.cloneNode(true));
+        });
+        xAxisSelect.value = 'RelSide';
+        yAxisSelect.value = 'RelHeight';
+    }
+    
+    // Show initial empty message for chart
+    clearScatterplot();
 };
 
-
+// ... (Rest of script.js with added scatterplot functions and renamed table function)
