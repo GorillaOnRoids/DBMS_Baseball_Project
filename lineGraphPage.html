@@ -15,7 +15,7 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            height: 500px;
+            height: 400px; 
         }
         .controls {
             text-align: center;
@@ -30,8 +30,8 @@
             margin-left: 10px;
             font-size: 1em;
         }
-        h2 { text-align: center; color: #333; }
-        body { text-align: center; font-family: sans-serif; }
+        h2 { text-align: center; color: #333; margin-top: 40px;}
+        body { text-align: center; font-family: sans-serif; padding-bottom: 50px;}
     </style>
 </head>
 <body>
@@ -41,8 +41,6 @@
     <div id="navbar"></div>
 
     <section>
-        <h2>Average Effective Velocity Progression</h2>
-        
         <div class="controls">
             <label for="csvFileInput"><strong>1. Upload CSV:</strong></label>
             <input type="file" id="csvFileInput" accept=".csv">
@@ -55,8 +53,14 @@
             </select>
         </div>
 
+        <h2>Average Effective Velocity</h2>
         <div class="chart-wrapper">
             <canvas id="velocityChart"></canvas>
+        </div>
+
+        <h2>Strike Percentage</h2>
+        <div class="chart-wrapper">
+            <canvas id="strikeChart"></canvas>
         </div>
     </section>
 
