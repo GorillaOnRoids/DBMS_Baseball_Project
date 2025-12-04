@@ -58,8 +58,9 @@ button {
   transform: scale(1.05);
 }
 
-/* OPTIONAL — center the menu */
+/* center the menu */
 .navbar ul {
   justify-content: center;
 }
+
 
